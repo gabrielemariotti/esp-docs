@@ -1,0 +1,293 @@
+openapi: 3.0.0
+
+# INFO SECTION
+info:
+  title: ESP APIs
+  version: 21.2.0
+  description: "ESP APIs technical reference."
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+
+# TAGS
+tags:
+  - name: Get Key
+    description: Get key endpoint
+    externalDocs:
+      description: Get key Documentation
+      url: https://namirialgroup.github.io/esp-docs/integrations/getkey
+  - name: Login
+    description: Login with SPID/CIE
+    externalDocs:
+      description: Login Documentation
+      url: https://namirialgroup.github.io/esp-docs/integrations/login
+  - name: Get user
+    description: Get user endpoint
+    externalDocs:
+      description: Get user Documentation
+      url: https://namirialgroup.github.io/esp-docs/integrations/token
+
+# PATHS
+paths:
+  # GET KEY
+  /sslprotected/<environment_name>/getKey.php:
+    get:
+      tags:
+        -  Get Key
+      summary: Get a authn key to start an authentication flow
+      security:
+        - sslCertificate: [ ]
+      parameters:
+        - in: query
+          name: level
+          schema:
+            type: string
+          required: true
+          description: The authentication level. It should be refered to L1-L2-L3 (The L letter should be removed)
+          example: 1
+        - in: query
+          name: attributes
+          schema:
+            type: string
+          required: true
+          description: The attribute parameter (Basic-Full)
+          example: Full
+      responses:
+        '200':
+          description: The authn key
+          content:
+            text/html:
+              schema:
+                $ref: '#/components/schemas/GetKeyResponse'
+        '400':
+          description: The input parameters are missing or invalid
+        '403':
+          description: The SSL certificate is missing or invalid
+
+  # Login
+  /<environment_name>/spid_login.php:
+    get:
+      tags:
+        - Login
+      summary: Login with SPID with a browser 
+      parameters:
+        - in: query
+          name: level
+          schema:
+            type: string
+          required: true
+          description: The authentication level. It should be refered to L1-L2-L3 (The L letter should be removed)
+          example: 1
+        - in: query
+          name: attributes
+          schema:
+            type: string
+          required: true
+          description: The attribute parameter (Basic-Full)
+          example: Full
+        - in: query
+          name: final
+          schema:
+            type: string
+          required: true
+          description: It's the redirect url called at the end of the authentication process (It should be comunicated during the assessment phase) 
+          example: http://localhost
+        - in: query
+          name: authnKey
+          schema:
+            type: string
+          required: true
+          description: It's the authn key that has been given at the get key endpoint
+          example: c1BUQkJ4d3hYUWV6ZEQ4TktlSWV6ZmozVy9HNzNrQlcyRFlvMTB1TTlGKzE3dWNjdHNLV2RUN0pVNTNJQnhsVnNMMWhBS0lucGNxMC9qY0c3U3BWYlc5dktOMXFvVkhyYUIrdDFBd1VBWGM5bERzS1RnVzd1V251R3pWUEpiUmc
+      responses:
+        '200':
+          description: Login successful
+          content:
+            text/html:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/JWTBearerResponse'
+                  - $ref: '#/components/schemas/SessionIdKeyResponse'
+        '400':
+          description: Wrong parameters
+          content:
+            text/html:
+              schema:
+                oneOf:
+                  - $ref: '#/components/responses/InvaidFinal'
+                  - $ref: '#/components/responses/InvalidLevel'
+                  - $ref: '#/components/responses/InvalidAttributes'
+                  - $ref: '#/components/responses/GenericAuthError'
+                  - $ref: '#/components/responses/RedirectUriMissing'
+        '403':
+          description: Forbidden error
+          content:
+            text/html:
+              schema:
+                oneOf:
+                  - $ref: '#/components/responses/InvalidAuthnKey'
+                  - $ref: '#/components/responses/AuthnKeyMismatch'
+                  - $ref: '#/components/responses/MissingAuthnKey'
+                  - $ref: '#/components/responses/UnderLevel'
+                  - $ref: '#/components/responses/LevelMismatch'
+                  - $ref: '#/components/responses/CurrentSessionLevel'
+          
+  /<environment_name>/cie_login.php:
+    get:
+      tags:
+        - Login
+      summary: Login with CIE with a browser
+      parameters:
+        - in: query
+          name: level
+          schema:
+            type: string
+          required: true
+          description: The authentication level. It should be refered to L1-L2-L3 (The L letter should be removed)
+          example: 1
+        - in: query
+          name: attributes
+          schema:
+            type: string
+          required: true
+          description: The attribute parameter (Basic-Full)
+          example: Full
+        - in: query
+          name: final
+          schema:
+            type: string
+          required: true
+          description: It's the redirect url called at the end of the authentication process (It should be comunicated during the assessment phase)
+          example: http://localhost
+        - in: query
+          name: authnKey
+          schema:
+            type: string
+          required: true
+          description: It's the authn key that has been given at the get key endpoint
+          example: c1BUQkJ4d3hYUWV6ZEQ4TktlSWV6ZmozVy9HNzNrQlcyRFlvMTB1TTlGKzE3dWNjdHNLV2RUN0pVNTNJQnhsVnNMMWhBS0lucGNxMC9qY0c3U3BWYlc5dktOMXFvVkhyYUIrdDFBd1VBWGM5bERzS1RnVzd1V251R3pWUEpiUmc
+      responses:
+        '200':
+          description: Login successful
+          content:
+            text/html:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/JWTBearerResponse'
+                  - $ref: '#/components/schemas/SessionIdKeyResponse'
+        '400':
+          description: Wrong parameters
+          content:
+            text/html:
+              schema:
+                oneOf:
+                  - $ref: '#/components/responses/InvaidFinal'
+                  - $ref: '#/components/responses/InvalidLevel'
+                  - $ref: '#/components/responses/InvalidAttributes'
+                  - $ref: '#/components/responses/GenericAuthError'
+                  - $ref: '#/components/responses/RedirectUriMissing'
+        '403':
+          description: Forbidden error
+          content:
+            text/html:
+              schema:
+                oneOf:
+                  - $ref: '#/components/responses/InvalidAuthnKey'
+                  - $ref: '#/components/responses/AuthnKeyMismatch'
+                  - $ref: '#/components/responses/MissingAuthnKey'
+                  - $ref: '#/components/responses/UnderLevel'
+                  - $ref: '#/components/responses/LevelMismatch'
+                  - $ref: '#/components/responses/CurrentSessionLevel'
+ 
+  #Get User
+  /sslprotected/<environment_name>/getUser.php:
+    get:
+      tags:
+        -  Get user
+      summary: Get a user JWT
+      security:
+        - sslCertificate: [ ]
+      parameters:
+        - in: query
+          name: ID
+          schema:
+            type: string
+          required: true
+          description: The ESP user identifier
+          example: _ecf182c0024338b109397ea3d04ab141
+        - in: query
+          name: key
+          schema:
+            type: string
+          required: true
+          description: The ESP session key
+          example: _029da15302d1f7bf8a4ff9826b4489c3
+      responses:
+        '200':
+          description: The authn key
+          content:
+            text/html:
+              schema:
+                $ref: '#/components/schemas/JWTBearerResponse'
+        '400':
+          description: missing key or ID parameter
+        '403':
+          description: Forbidden error
+          content:
+            text/html:
+              schema:
+                oneOf:
+                  - $ref: '#/components/responses/SSLError'
+                  - $ref: '#/components/responses/KeyIdNotFound'
+
+externalDocs:
+  description: Official ESP documentation
+  url: https://namirialgroup.github.io/esp-docs/
+servers:
+  - url: https://esp-saas.test.namirialtsp.com
+    description: (Test)
+  - url: https://esp-saas.namirialtsp.com
+    description: (Prod)
+components:
+  securitySchemes:
+    sslCertificate: # arbitrary name for the security scheme
+      type: http
+      scheme: basic    
+  responses:
+    InvaidFinal:
+      description: Error code 1 - Invalid final url
+    InvalidLevel:
+      description: Error code 2 - Invalid level parameter
+    InvalidAttributes:
+      description: Error code 3 - Invalid attributes parameter
+    InvalidAuthnKey:
+      description: Error code 4 - Invalid authn key
+    AuthnKeyMismatch:
+      description: Error code 5 - The authn key has a mismatch with the SP configuration
+    MissingAuthnKey:
+      description: Error code 6 - The authn key is missing
+    GenericAuthError:
+      description: Error code 7/8 - Generic authentication error
+    RedirectUriMissing:
+      description: Error code 9 - The SP redirect uri misses into the configuration
+    UnderLevel:
+      description: Error code 10 - The authentication level obtained from lower SPID to what is requested through authnKey
+    LevelMismatch:
+      description: Error code 11 - There is a level mismatch between requested level and authn key level
+    CurrentSessionLevel:
+      description: Error code 12 - The authentication level of a SPID session already active not corresponding to the currently requested level
+    KeyIdNotFound:
+      description: Error code 3 - The session is missing for input key and ID parameters
+    SSLError:
+      description: SSL authentication error
+  schemas:
+    GetKeyResponse:
+      type: string
+      example: c1BUQkJ4d3hYUWV6ZEQ4TktlSWV6ZmozVy9HNzNrQlcyRFlvMTB1TTlGKzE3dWNjdHNLV2RUN0pVNTNJQnhsVnNMMWhBS0lucGNxMC9qY0c3U3BWYlc5dktOMXFvVkhyYUIrdDFBd1VBWGM5bERzS1RnVzd1V251R3pWUEpiUmc
+    JWTBearerResponse:
+      type: string
+      description: jwt that contains the SAML Assertion attributes
+    SessionIdKeyResponse:
+      type: string
+      description: querystring with session key and id
+    
